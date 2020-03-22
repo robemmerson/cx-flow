@@ -834,21 +834,21 @@ public class ScanUtils {
         return fields;
     }
 
-    public static BugTracker.Type getBugTypeEnum(String bug, List<String> bugTrackerImpl) throws IllegalArgumentException{
-
-        BugTracker.Type bugType = EnumUtils.getEnum(BugTracker.Type.class, bug);
-        if(bugType == null && bug != null){ //Try uppercase
-            bugType = EnumUtils.getEnum(BugTracker.Type.class, bug.toUpperCase(Locale.ROOT));
-            if(bugType == null){
+    public static BugTracker.Type getBugTypeEnum(String rawBugTrackerValue, List<String> bugTrackerImpl) throws IllegalArgumentException {
+        BugTracker.Type result = EnumUtils.getEnum(BugTracker.Type.class, rawBugTrackerValue);
+        if (result == null && rawBugTrackerValue != null) {
+            //Try uppercase
+            result = EnumUtils.getEnum(BugTracker.Type.class, rawBugTrackerValue.toUpperCase(Locale.ROOT));
+            if (result == null) {
                 log.debug("Determine if custom bean is being used");
-                if(bugTrackerImpl == null || !bugTrackerImpl.contains(bug)){
-                    log.debug("bug tracker {} not found within available options {}", bug, bugTrackerImpl);
+                if (bugTrackerImpl == null || !bugTrackerImpl.contains(rawBugTrackerValue)) {
+                    log.debug("bug tracker {} not found within available options {}", rawBugTrackerValue, bugTrackerImpl);
                     throw new IllegalArgumentException("Custom bug tracker not found in list of available implementations");
                 }
                 return BugTracker.Type.CUSTOM;
             }
         }
-        return bugType;
+        return result;
     }
 
     public static String getFilename(ScanRequest request, String format){
