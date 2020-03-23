@@ -52,18 +52,6 @@ public class TestUtils {
         return objectMapper.readTree(file);
     }
 
-    private interface Revertible {
-        void revert();
-    }
-
-    private static final Stack<Revertible> propertiesChanges = new Stack<>();
-
-    public static void changePropertiesBack() {
-        while (!propertiesChanges.isEmpty()) {
-            propertiesChanges.pop().revert();
-        }
-    }
-
     public static void runCxFlow(CxFlowRunner runner, String args) throws InvocationTargetException {
         runner.run(new DefaultApplicationArguments(args.split(" ")));
     }
