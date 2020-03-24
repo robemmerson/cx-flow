@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -33,6 +34,9 @@ import static com.checkmarx.sdk.config.Constants.UNKNOWN_INT;
 
 import static com.checkmarx.flow.exception.ExitThrowable.exit;
 
+/**
+ * High level business logic for CxFlow automation.
+ */
 @Service
 public class FlowService {
 
@@ -71,6 +75,11 @@ public class FlowService {
         this.flowProperties = flowProperties;
     }
 
+    /**
+     * Main entry point from webhooks.
+     * Marked as async, because we don't wait for scan completion in webhooks (otherwise version control provider
+     * will fail the webhook request by timeout).
+     */
     @Async("webHook")
     public void initiateAutomation(ScanRequest request) {
         Map<String, Object>  emailCtx = new HashMap<>();
@@ -100,7 +109,7 @@ public class FlowService {
         }
     }
 
-    public CompletableFuture<ScanResults> executeCxScanFlow(ScanRequest request, File cxFile) throws MachinaException {
+    public CompletableFuture<ScanResults> executeCxScanFlow(ScanRequest request, @Nullable File cxFile) throws MachinaException {
         ScanDetails scanDetails = executeCxScan(request,cxFile);
         if(scanDetails.processResults()) {
             return resultsService.processScanResultsAsync(request, scanDetails.getProjectId(), scanDetails.getScanId(), scanDetails.getOsaScanId(), request.getFilters());

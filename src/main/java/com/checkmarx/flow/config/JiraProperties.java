@@ -268,6 +268,13 @@ public class JiraProperties {
         this.parentUrl = ParentUrl;
     }
 
+    /**
+     * Affects the way how CxFlow checks if an issue already exists in Jira.
+     * @return
+     *      false: only search among issues specified by {@link #getUrl()} (top level issues).<br>
+     *      true: in addition to the top level, also search among issues specified by {@link #getParentUrl()} and
+     *      {@link #getGrandParentUrl()}, i.e. 3 levels deep.
+     */
     public boolean isChild() {
         return child;
     }

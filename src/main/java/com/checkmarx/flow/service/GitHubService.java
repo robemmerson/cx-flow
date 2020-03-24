@@ -13,12 +13,11 @@ import com.checkmarx.flow.exception.GitHubClientRunTimeException;
 import com.checkmarx.flow.utils.ScanUtils;
 import com.checkmarx.sdk.dto.CxConfig;
 import com.checkmarx.sdk.dto.ScanResults;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -31,19 +30,21 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import java.util.*;
 
+/**
+ * Service that works with GitHub repositories (getting repo content, managing pull requests).
+ */
 @Service
+@Slf4j
 public class GitHubService extends RepoService {
-    private static final Logger log = LoggerFactory.getLogger(GitHubService.class);
-
     private static final String HTTP_BODY_IS_NULL = "HTTP Body is null for content api ";
     private static final String CONTENT_NOT_FOUND_IN_RESPONSE = "Content not found in JSON response";
     private static final String STATUSES_URL_KEY = "statuses_url";
     private static final String STATUSES_URL_NOT_PROVIDED = "statuses_url was not provided within the request object, which is required for blocking / unblocking pull requests";
 
-    public static final String MERGE_SUCCESS_DESCRIPTION = "Checkmarx Scan Completed";
-    public static final String MERGE_FAILURE_DESCRIPTION = "Checkmarx Scan completed. Vulnerability scan failed";
-    public static final String MERGE_SUCCESS = "success";
-    public static final String MERGE_FAILURE = "failure";
+    private static final String MERGE_SUCCESS_DESCRIPTION = "Checkmarx Scan Completed";
+    private static final String MERGE_FAILURE_DESCRIPTION = "Checkmarx Scan completed. Vulnerability scan failed";
+    private static final String MERGE_SUCCESS = "success";
+    private static final String MERGE_FAILURE = "failure";
 
     private final RestTemplate restTemplate;
     private final GitHubProperties properties;
