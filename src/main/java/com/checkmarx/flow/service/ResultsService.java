@@ -148,9 +148,6 @@ public class ResultsService {
                 gitLabService.processMerge(request, results);
                 gitLabService.endBlockMerge(request);
                 break;
-            case BITBUCKETCOMMIT:
-                bbService.processCommit(request, results);
-                break;
             case BITBUCKETPULL:
                 bbService.processMerge(request, results);
                 break;

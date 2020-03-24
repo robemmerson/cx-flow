@@ -69,7 +69,6 @@ public class BugTracker {
 
     public enum Type {
         JIRA("JIRA"),
-        BITBUCKETCOMMIT("BITBUCKETCOMMIT"),
         BITBUCKETPULL("BITBUCKETPULL"),
         BITBUCKETSERVERPULL("BITBUCKETSERVERPULL"),
         bitbucketserverpull("bitbucketserverpull"),
@@ -77,13 +76,14 @@ public class BugTracker {
         adopull("adopull"),
         GITHUBPULL("GITHUBPULL"),
         githubpull("githubpull"),
-        GITHUBCOMMIT("GITHUBCOMMIT"),
         GITLABCOMMIT("GITLABCOMMIT"),
         GITLABMERGE("GITLABMERGE"),
         gitlabmerge("gitlabmerge"),
         EMAIL("EMAIL"),
         CUSTOM("CUSTOM"),
+        // Asynchronous call - don't wait for results
         NONE("NONE"),
+        // Wait for the scan to complete
         WAIT("WAIT"),
         wait("wait");
 
