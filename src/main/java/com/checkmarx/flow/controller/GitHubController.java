@@ -125,7 +125,7 @@ public class GitHubController {
             @RequestParam(value = "exclude-files", required = false) List<String> excludeFiles,
             @RequestParam(value = "exclude-folders", required = false) List<String> excludeFolders,
             @RequestParam(value = "override", required = false) String override,
-            @RequestParam(value = "bug", required = false) String bug,
+            @RequestParam(value = "bug", required = false) String bugTrackerName,
             @RequestParam(value = "app-only", required = false) Boolean appOnlyTracking
     ){
         String uid = helperService.getShortUid();
@@ -160,8 +160,8 @@ public class GitHubController {
             }
 
             BugTracker.Type bugType = BugTracker.Type.GITHUBPULL;
-            if(!ScanUtils.empty(bug)){
-                bugType = ScanUtils.getBugTypeEnum(bug, flowProperties.getBugTrackerImpl());
+            if (!ScanUtils.empty(bugTrackerName)) {
+                bugType = ScanUtils.getBugTypeEnum(bugTrackerName, flowProperties.getBugTrackerImpl());
             }
 
             if(appOnlyTracking != null){
@@ -184,7 +184,7 @@ public class GitHubController {
                 branches.addAll(flowProperties.getBranches());
             }
 
-            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bug);
+            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bugTrackerName);
             /*Determine filters, if any*/
             if(!ScanUtils.empty(severity) || !ScanUtils.empty(cwe) || !ScanUtils.empty(category) || !ScanUtils.empty(status)){
                 filters = ScanUtils.getFilters(severity, cwe, category, status);
@@ -253,7 +253,7 @@ public class GitHubController {
 
 
         }catch (IllegalArgumentException e){
-            String errorMessage = "Error submitting Scan Request.  Product or Bugtracker option incorrect ".concat(product != null ? product : "").concat(" | ").concat(bug != null ? bug : "");
+            String errorMessage = "Error submitting Scan Request.  Product or Bugtracker option incorrect ".concat(product != null ? product : "").concat(" | ").concat(bugTrackerName != null ? bugTrackerName : "");
             log.error(errorMessage, e);
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 
@@ -292,7 +292,7 @@ public class GitHubController {
             @RequestParam(value = "exclude-files", required = false) List<String> excludeFiles,
             @RequestParam(value = "exclude-folders", required = false) List<String> excludeFolders,
             @RequestParam(value = "override", required = false) String override,
-            @RequestParam(value = "bug", required = false) String bug,
+            @RequestParam(value = "bug", required = false) String bugTrackerName,
             @RequestParam(value = "app-only", required = false) Boolean appOnlyTracking
     ){
         String uid = helperService.getShortUid();
@@ -322,10 +322,10 @@ public class GitHubController {
 
             //set the default bug tracker as per yml
             BugTracker.Type bugType;
-            if (ScanUtils.empty(bug)) {
-                bug =  flowProperties.getBugTracker();
+            if (ScanUtils.empty(bugTrackerName)) {
+                bugTrackerName =  flowProperties.getBugTracker();
             }
-            bugType = ScanUtils.getBugTypeEnum(bug, flowProperties.getBugTrackerImpl());
+            bugType = ScanUtils.getBugTypeEnum(bugTrackerName, flowProperties.getBugTrackerImpl());
 
             if(appOnlyTracking != null){
                 flowProperties.setTrackApplicationOnly(appOnlyTracking);
@@ -346,7 +346,7 @@ public class GitHubController {
                 branches.addAll(flowProperties.getBranches());
             }
 
-            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bug);
+            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bugTrackerName);
             /*Determine filters, if any*/
             if(!ScanUtils.empty(severity) || !ScanUtils.empty(cwe) || !ScanUtils.empty(category) || !ScanUtils.empty(status)){
                 filters = ScanUtils.getFilters(severity, cwe, category, status);
@@ -428,7 +428,7 @@ public class GitHubController {
             }
 
         }catch (IllegalArgumentException e){
-            String errorMessage = "Error submitting Scan Request.  Product or Bugtracker option incorrect ".concat(product != null ? product : "").concat(" | ").concat(bug != null ? bug : "");
+            String errorMessage = "Error submitting Scan Request.  Product or Bugtracker option incorrect ".concat(product != null ? product : "").concat(" | ").concat(bugTrackerName != null ? bugTrackerName : "");
             log.error(errorMessage, e);
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 

@@ -76,7 +76,7 @@ public class ADOController {
             @RequestParam(value = "exclude-files", required = false) List<String> excludeFiles,
             @RequestParam(value = "exclude-folders", required = false) List<String> excludeFolders,
             @RequestParam(value = "override", required = false) String override,
-            @RequestParam(value = "bug", required = false) String bug,
+            @RequestParam(value = "bug", required = false) String bugTrackerName,
             @RequestParam(value = "ado-issue", required = false) String adoIssueType,
             @RequestParam(value = "ado-body", required = false) String adoIssueBody,
             @RequestParam(value = "ado-opened", required = false) String adoOpenedState,
@@ -115,8 +115,8 @@ public class ADOController {
             }
 
             BugTracker.Type bugType = BugTracker.Type.ADOPULL;
-            if(!ScanUtils.empty(bug)){
-                bugType = ScanUtils.getBugTypeEnum(bug, flowProperties.getBugTrackerImpl());
+            if(!ScanUtils.empty(bugTrackerName)){
+                bugType = ScanUtils.getBugTypeEnum(bugTrackerName, flowProperties.getBugTrackerImpl());
             }
 
             if(appOnlyTracking != null){
@@ -154,7 +154,7 @@ public class ADOController {
                 branches.addAll(flowProperties.getBranches());
             }
 
-            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bug);
+            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bugTrackerName);
             /*Determine filters, if any*/
             if(!ScanUtils.empty(severity) || !ScanUtils.empty(cwe) || !ScanUtils.empty(category) || !ScanUtils.empty(status)){
                 filters = ScanUtils.getFilters(severity, cwe, category, status);
@@ -262,7 +262,7 @@ public class ADOController {
             @RequestParam(value = "exclude-files", required = false) List<String> excludeFiles,
             @RequestParam(value = "exclude-folders", required = false) List<String> excludeFolders,
             @RequestParam(value = "override", required = false) String override,
-            @RequestParam(value = "bug", required = false) String bug,
+            @RequestParam(value = "bug", required = false) String bugTrackerName,
             @RequestParam(value = "ado-issue", required = false) String adoIssueType,
             @RequestParam(value = "ado-body", required = false) String adoIssueBody,
             @RequestParam(value = "ado-opened", required = false) String adoOpenedState,
@@ -292,10 +292,10 @@ public class ADOController {
 
             //set the default bug tracker as per yml
             BugTracker.Type bugType;
-            if (ScanUtils.empty(bug)) {
-                bug =  flowProperties.getBugTracker();
+            if (ScanUtils.empty(bugTrackerName)) {
+                bugTrackerName = flowProperties.getBugTracker();
             }
-            bugType = ScanUtils.getBugTypeEnum(bug, flowProperties.getBugTrackerImpl());
+            bugType = ScanUtils.getBugTypeEnum(bugTrackerName, flowProperties.getBugTrackerImpl());
 
             if(ScanUtils.empty(adoIssueType)){
                 adoIssueType = properties.getIssueType();
@@ -331,7 +331,7 @@ public class ADOController {
                 branches.addAll(flowProperties.getBranches());
             }
 
-            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bug);
+            BugTracker bt = ScanUtils.getBugTracker(assignee, bugType, jiraProperties, bugTrackerName);
 
             /*Determine filters, if any*/
             if(!ScanUtils.empty(severity) || !ScanUtils.empty(cwe) || !ScanUtils.empty(category) || !ScanUtils.empty(status)){
