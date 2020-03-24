@@ -3,6 +3,7 @@
 /bin/
 !gradle/wrapper/gradle-wrapper.jar
 application-secrets.yml
+*.log
 
 ### STS ###
 .apt_generated
@@ -21,7 +22,6 @@ application-secrets.yml
 
 ### NetBeans ###
 /nbproject/private/
-/build/
 /out/
 /nbbuild/
 /dist/

@@ -56,6 +56,9 @@ public class JiraProperties {
         return this.token;
     }
 
+    /**
+     * Jira project key (not to be confused with project name).
+     */
     public String getProject() {
         return this.project;
     }
@@ -264,8 +267,8 @@ public class JiraProperties {
         return parentUrl;
     }
 
-    public void setParentUrl(String ParentUrl) {
-        this.parentUrl = ParentUrl;
+    public void setParentUrl(String parentUrl) {
+        this.parentUrl = parentUrl;
     }
 
     /**
@@ -287,8 +290,8 @@ public class JiraProperties {
         return grandParentUrl;
     }
 
-    public void setGrandParentUrl(String GrandParentUrl) {
-        this.grandParentUrl = GrandParentUrl;
+    public void setGrandParentUrl(String grandParentUrl) {
+        this.grandParentUrl = grandParentUrl;
     }
 
     public Integer getHttpTimeout() {
