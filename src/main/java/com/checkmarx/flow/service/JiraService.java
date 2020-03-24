@@ -49,6 +49,9 @@ public class JiraService {
     private static final String SECURITY_FIELD_TYPE = "security";
     private static final String VALUE_FIELD_TYPE = "value";
 
+    private static final String LINES_PREFIX = "#lines-";
+    private static final String LINE_PREFIX = "[Line #";
+
     @ConstructorProperties({"jiraProperties", "flowProperties"})
     public JiraService(JiraProperties jiraProperties, FlowProperties flowProperties) {
         this.jiraProperties = jiraProperties;
@@ -124,7 +127,7 @@ public class JiraService {
                     jiraProperties.getAppLabelPrefix(), request.getApplication()
             );
         } else {
-            log.error("Namespace/Repo/Branch or App must be provided in order to properly track ");
+            log.error("Namespace/Repo/Branch or App must be provided in order to properly track");
             throw new MachinaRuntimeException();
         }
         log.debug(jql);
@@ -148,14 +151,12 @@ public class JiraService {
         return this.issueClient.getIssue(bugId).claim();
     }
 
-    private IssueType getIssueType(String projectKey, String type) throws RestClientException, JiraClientException {
+    private IssueType getIssueType(String projectKey, String type) throws JiraClientException {
         List<String> issueTypesList = new ArrayList<>();
 
         Project project = this.client.getProjectClient().getProject(projectKey).claim();
-        Iterator<IssueType> issueTypes = project.getIssueTypes().iterator();
 
-        while (issueTypes.hasNext()) {
-            IssueType it = issueTypes.next();
+        for (IssueType it : project.getIssueTypes()) {
             issueTypesList.add(it.getName());
             if (it.getName().equals(type)) {
                 return it;
@@ -187,15 +188,8 @@ public class JiraService {
 
             IssueType issueType = this.getIssueType(projectKey, bugTracker.getIssueType());
             IssueInputBuilder issueBuilder = new IssueInputBuilder(projectKey, issueType.getId());
-            String issuePrefix = jiraProperties.getIssuePrefix();
-            String issuePostfix = jiraProperties.getIssuePostfix();
-
-            if (issuePrefix == null) {
-                issuePrefix = "";
-            }
-            if (issuePostfix == null) {
-                issuePostfix = "";
-            }
+            String issuePrefix = StringUtils.defaultString(jiraProperties.getIssuePrefix());
+            String issuePostfix = StringUtils.defaultString(jiraProperties.getIssuePostfix());
 
             String summary;
             if (!flowProperties.isTrackApplicationOnly()
@@ -365,130 +359,7 @@ public class JiraService {
                             continue;
                         }
                         /*known values we can use*/
-                        switch (fieldName) {
-                            case "application":
-                                log.debug("application: {}", request.getApplication());
-                                value = request.getApplication();
-                                break;
-                            case "project":
-                                log.debug("project: {}", request.getProject());
-                                value = request.getProject();
-                                break;
-                            case "namespace":
-                                log.debug("namespace: {}", request.getNamespace());
-                                value = request.getNamespace();
-                                break;
-                            case "repo-name":
-                                log.debug("repo-name: {}", request.getRepoName());
-                                value = request.getRepoName();
-                                break;
-                            case "repo-url":
-                                log.debug("repo-url: {}", request.getRepoUrl());
-                                value = request.getRepoUrl();
-                                break;
-                            case "branch":
-                                log.debug("branch: {}", request.getBranch());
-                                value = request.getBranch();
-                                break;
-                            case "severity":
-                                log.debug("severity: {}", issue.getSeverity());
-                                value = issue.getSeverity();
-                                break;
-                            case "category":
-                                log.debug("category: {}", issue.getVulnerability());
-                                value = issue.getVulnerability();
-                                break;
-                            case "cwe":
-                                log.debug("cwe: {}", issue.getCwe());
-                                value = issue.getCwe();
-                                break;
-                            case "cve":
-                                log.debug("cve: {}", issue.getCve());
-                                value = issue.getCve();
-                                break;
-                            case "system-date":
-                                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                                LocalDateTime now = LocalDateTime.now().plusDays(f.getOffset());
-                                value = dtf.format(now);
-                                log.debug("system date: {}", value);
-                                break;
-                            case "recommendation":
-                                StringBuilder recommendation = new StringBuilder();
-                                if (issue.getLink() != null && !issue.getLink().isEmpty()) {
-                                    recommendation.append("Checkmarx Link: ").append(issue.getLink()).append(ScanUtils.CRLF);
-                                }
-                                if (!ScanUtils.empty(issue.getCwe())) {
-                                    recommendation.append("Mitre Details: ").append(String.format(flowProperties.getMitreUrl(), issue.getCwe())).append(ScanUtils.CRLF);
-                                }
-                                if (!ScanUtils.empty(flowProperties.getCodebashUrl())) {
-                                    recommendation.append("Training: ").append(flowProperties.getCodebashUrl()).append(ScanUtils.CRLF);
-                                }
-                                if (!ScanUtils.empty(flowProperties.getWikiUrl())) {
-                                    recommendation.append("Guidance: ").append(flowProperties.getWikiUrl()).append(ScanUtils.CRLF);
-                                }
-                                value = recommendation.toString();
-                                break;
-                            case "loc":
-                                value = "";
-                                List<Integer> lines = issue.getDetails().entrySet()
-                                        .stream()
-                                        .filter(x -> x.getKey() != null && x.getValue() != null && !x.getValue().isFalsePositive())
-                                        .map(Map.Entry::getKey)
-                                        .collect(Collectors.toList());
-                                if (!lines.isEmpty()) {
-                                    Collections.sort(lines);
-                                    value = StringUtils.join(lines, ",");
-                                    log.debug("loc: {}", value);
-                                }
-                                break;
-                            case "not-exploitable":
-                                value = "";
-                                List<Integer> fpLines;
-                                if (issue.getDetails() != null) {
-                                    fpLines = issue.getDetails().entrySet()
-                                            .stream()
-                                            .filter(x -> x.getKey() != null && x.getValue() != null && x.getValue().isFalsePositive())
-                                            .map(Map.Entry::getKey)
-                                            .collect(Collectors.toList());
-                                    if (!fpLines.isEmpty()) {
-                                        Collections.sort(fpLines);
-                                        value = StringUtils.join(fpLines, ",");
-                                        log.debug("loc: {}", value);
-                                    }
-                                }
-                                break;
-                            case "site":
-                                log.debug("site: {}", request.getSite());
-                                value = request.getSite();
-                                break;
-                            case "issue-link":
-                                log.debug("issue-link: {}", issue.getLink());
-                                value = issue.getLink();
-                                break;
-                            case "filename":
-                                log.debug("filename: {}", issue.getFilename());
-                                value = issue.getFilename();
-                                break;
-                            case "language":
-                                log.debug("language: {}", issue.getLanguage());
-                                value = issue.getLanguage();
-                                break;
-                            case "comment":
-                                value = "";
-                                StringBuilder comments = new StringBuilder();
-                                String commentFmt = "[Line %s]: [%s]".concat(ScanUtils.CRLF);
-                                if (issue.getDetails() != null) {
-                                    issue.getDetails().entrySet()
-                                            .stream()
-                                            .filter( x -> x.getKey( ) != null && x.getValue() != null && x.getValue().getComment() != null && !x.getValue().getComment().isEmpty())
-                                            .forEach( c -> comments.append(String.format(commentFmt, c.getKey(), c.getValue().getComment())));
-                                    value = comments.toString();
-                                }
-                                break;
-                            default:
-                                log.warn("field value for {} not found", f.getName());
-                                value = "";
-                        }
+                        value = getCustomFieldValue(request, issue, f, fieldName);
                         /*If the value is missing, check if a default value was specified*/
                         if (ScanUtils.empty(value)) {
                             log.debug("Value is empty, defaulting to configured default (if applicable)");
@@ -529,9 +400,9 @@ public class JiraService {
                         case "label":
                             /*csv to array | replace space with _ */
                             log.debug("label field");
-                            String[] l = StringUtils.split(value, ",");
+                            String[] labels = StringUtils.split(value, ",");
                             list = new ArrayList<>();
-                            for (String x : l) {
+                            for (String x : labels) {
                                 list.add(x.replaceAll("[^a-zA-Z0-9-_]+", "_"));
                             }
 
@@ -563,6 +434,138 @@ public class JiraService {
                 }
             }
         }
+    }
+
+    private String getCustomFieldValue(ScanRequest request,
+                                       ScanResults.XIssue issue,
+                                       com.checkmarx.flow.dto.Field field,
+                                       String fieldName) {
+        String value;
+        switch (fieldName) {
+            case "application":
+                log.debug("application: {}", request.getApplication());
+                value = request.getApplication();
+                break;
+            case "project":
+                log.debug("project: {}", request.getProject());
+                value = request.getProject();
+                break;
+            case "namespace":
+                log.debug("namespace: {}", request.getNamespace());
+                value = request.getNamespace();
+                break;
+            case "repo-name":
+                log.debug("repo-name: {}", request.getRepoName());
+                value = request.getRepoName();
+                break;
+            case "repo-url":
+                log.debug("repo-url: {}", request.getRepoUrl());
+                value = request.getRepoUrl();
+                break;
+            case "branch":
+                log.debug("branch: {}", request.getBranch());
+                value = request.getBranch();
+                break;
+            case "severity":
+                log.debug("severity: {}", issue.getSeverity());
+                value = issue.getSeverity();
+                break;
+            case "category":
+                log.debug("category: {}", issue.getVulnerability());
+                value = issue.getVulnerability();
+                break;
+            case "cwe":
+                log.debug("cwe: {}", issue.getCwe());
+                value = issue.getCwe();
+                break;
+            case "cve":
+                log.debug("cve: {}", issue.getCve());
+                value = issue.getCve();
+                break;
+            case "system-date":
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDateTime now = LocalDateTime.now().plusDays(field.getOffset());
+                value = dtf.format(now);
+                log.debug("system date: {}", value);
+                break;
+            case "recommendation":
+                StringBuilder recommendation = new StringBuilder();
+                if (issue.getLink() != null && !issue.getLink().isEmpty()) {
+                    recommendation.append("Checkmarx Link: ").append(issue.getLink()).append(ScanUtils.CRLF);
+                }
+                if (!ScanUtils.empty(issue.getCwe())) {
+                    recommendation.append("Mitre Details: ").append(String.format(flowProperties.getMitreUrl(), issue.getCwe())).append(ScanUtils.CRLF);
+                }
+                if (!ScanUtils.empty(flowProperties.getCodebashUrl())) {
+                    recommendation.append("Training: ").append(flowProperties.getCodebashUrl()).append(ScanUtils.CRLF);
+                }
+                if (!ScanUtils.empty(flowProperties.getWikiUrl())) {
+                    recommendation.append("Guidance: ").append(flowProperties.getWikiUrl()).append(ScanUtils.CRLF);
+                }
+                value = recommendation.toString();
+                break;
+            case "loc":
+                value = "";
+                List<Integer> lines = issue.getDetails().entrySet()
+                        .stream()
+                        .filter(x -> x.getKey() != null && x.getValue() != null && !x.getValue().isFalsePositive())
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                if (!lines.isEmpty()) {
+                    Collections.sort(lines);
+                    value = StringUtils.join(lines, ",");
+                    log.debug("loc: {}", value);
+                }
+                break;
+            case "not-exploitable":
+                value = "";
+                List<Integer> fpLines;
+                if (issue.getDetails() != null) {
+                    fpLines = issue.getDetails().entrySet()
+                            .stream()
+                            .filter(x -> x.getKey() != null && x.getValue() != null && x.getValue().isFalsePositive())
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+                    if (!fpLines.isEmpty()) {
+                        Collections.sort(fpLines);
+                        value = StringUtils.join(fpLines, ",");
+                        log.debug("loc: {}", value);
+                    }
+                }
+                break;
+            case "site":
+                log.debug("site: {}", request.getSite());
+                value = request.getSite();
+                break;
+            case "issue-link":
+                log.debug("issue-link: {}", issue.getLink());
+                value = issue.getLink();
+                break;
+            case "filename":
+                log.debug("filename: {}", issue.getFilename());
+                value = issue.getFilename();
+                break;
+            case "language":
+                log.debug("language: {}", issue.getLanguage());
+                value = issue.getLanguage();
+                break;
+            case "comment":
+                value = "";
+                StringBuilder comments = new StringBuilder();
+                String commentFmt = "[Line %s]: [%s]".concat(ScanUtils.CRLF);
+                if (issue.getDetails() != null) {
+                    issue.getDetails().entrySet()
+                            .stream()
+                            .filter( x -> x.getKey( ) != null && x.getValue() != null && x.getValue().getComment() != null && !x.getValue().getComment().isEmpty())
+                            .forEach( c -> comments.append(String.format(commentFmt, c.getKey(), c.getValue().getComment())));
+                    value = comments.toString();
+                }
+                break;
+            default:
+                log.warn("field value for {} not found", field.getName());
+                value = "";
+        }
+        return value;
     }
 
     private SecurityLevel getSecurityLevel(String projectKey, String issueType, String name) {
@@ -804,7 +807,7 @@ public class JiraService {
                             if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKETSERVER)) {
                                 body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#").append(entry.getKey()).append("] ");
                             } else if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKET)) { //BB Cloud
-                                body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#lines-").append(entry.getKey()).append("] ");
+                                body.append("[").append(entry.getKey()).append("|").append(fileUrl).append(LINES_PREFIX).append(entry.getKey()).append("] ");
                             } else {
                                 body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#L").append(entry.getKey()).append("] ");
                             }
@@ -826,7 +829,7 @@ public class JiraService {
                                 if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKETSERVER)) {
                                     body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#").append(entry.getKey()).append("] ");
                                 } else if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKET)) { //BB Cloud
-                                    body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#lines-").append(entry.getKey()).append("] ");
+                                    body.append("[").append(entry.getKey()).append("|").append(fileUrl).append(LINES_PREFIX).append(entry.getKey()).append("] ");
                                 } else {
                                     body.append("[").append(entry.getKey()).append("|").append(fileUrl).append("#L").append(entry.getKey()).append("] ");
                                 }
@@ -844,11 +847,11 @@ public class JiraService {
                             body.append("----").append(ScanUtils.CRLF);
                             if (!ScanUtils.empty(fileUrl)) {
                                 if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKETSERVER)) {
-                                    body.append("[Line #").append(entry.getKey()).append(":|").append(fileUrl).append("#").append(entry.getKey()).append("]").append(ScanUtils.CRLF);
+                                    body.append(LINE_PREFIX).append(entry.getKey()).append(":|").append(fileUrl).append("#").append(entry.getKey()).append("]").append(ScanUtils.CRLF);
                                 } else if (request.getRepoType().equals(ScanRequest.Repository.BITBUCKET)) { //BB Cloud
-                                    body.append("[Line #").append(entry.getKey()).append(":|").append(fileUrl).append("#lines-").append(entry.getKey()).append("]").append(ScanUtils.CRLF);
+                                    body.append(LINE_PREFIX).append(entry.getKey()).append(":|").append(fileUrl).append(LINES_PREFIX).append(entry.getKey()).append("]").append(ScanUtils.CRLF);
                                 } else {
-                                    body.append("[Line #").append(entry.getKey()).append(":|").append(fileUrl).append("#L").append(entry.getKey()).append("]").append(ScanUtils.CRLF);
+                                    body.append(LINE_PREFIX).append(entry.getKey()).append(":|").append(fileUrl).append("#L").append(entry.getKey()).append("]").append(ScanUtils.CRLF);
                                 }
                             } else {
                                 body.append("Line #").append(entry.getKey()).append(ScanUtils.CRLF);
@@ -894,26 +897,22 @@ public class JiraService {
     }
 
     Map<String, List<String>> process(ScanResults results, ScanRequest request) throws JiraClientException {
-        Map<String, ScanResults.XIssue> map;
-        Map<String, Issue> jiraMap;
-        List<Issue> issuesParent;
-        List<Issue> issuesGrandParent;
         List<String> newIssues = new ArrayList<>();
         List<String> updatedIssues = new ArrayList<>();
         List<String> closedIssues = new ArrayList<>();
 
         getAndModifyRequestApplication(request);
 
-        issuesParent = getIssuesParent(request);
-        issuesGrandParent = getIssuesGrandParent(request);
+        List<Issue> issuesParent = getIssuesParent(request);
+        List<Issue> issuesGrandParent = getIssuesGrandParent(request);
 
         log.info("Processing Results and publishing findings to Jira");
 
-        map = this.getIssueMap(results.getXIssues(), request);
-        setMapWithScanResults(map, nonPublishedScanResultsMap);
-        jiraMap = this.getJiraIssueMap(this.getIssues(request));
+        Map<String, ScanResults.XIssue> xMap = this.getIssueMap(results.getXIssues(), request);
+        setMapWithScanResults(xMap, nonPublishedScanResultsMap);
+        Map<String, Issue> jiraMap = this.getJiraIssueMap(this.getIssues(request));
 
-        for (Map.Entry<String, ScanResults.XIssue> xIssue : map.entrySet()) {
+        for (Map.Entry<String, ScanResults.XIssue> xIssue : xMap.entrySet()) {
             try {
                 ScanResults.XIssue currentIssue = xIssue.getValue();
                 boolean issueAlreadyExists = jiraMap.containsKey(xIssue.getKey());
@@ -934,9 +933,11 @@ public class JiraService {
                     }
                 } else {
                     /*Create the new issue*/
-                    if (!currentIssue.isAllFalsePositive() && (!jiraProperties.isChild() || (!parentCheck(xIssue.getKey(), issuesParent) && !grandparentCheck(xIssue.getKey(), issuesGrandParent)))) {
+                    if (!currentIssue.isAllFalsePositive() &&
+                            !issueExistsAmongAncestors(xIssue.getKey(), issuesParent, issuesGrandParent)) {
+
                         if (jiraProperties.isChild()) {
-                            log.info("Issue not found in parent creating issue for child");
+                            log.info("Issue not found in parent. Creating issue for child");
                         }
                         createIssueAndAddToNewIssuesList(request, newIssues, xIssue, currentIssue);
                     }
@@ -950,13 +951,21 @@ public class JiraService {
         }
 
         /*Check if an issue exists in Jira but not within results and close if not*/
-        closeIssueInCaseNotWithinResults(request, map, jiraMap, closedIssues);
+        closeIssueInCaseNotWithinResults(request, xMap, jiraMap, closedIssues);
 
         return ImmutableMap.of(
                 "new", newIssues,
                 "updated", updatedIssues,
                 "closed", closedIssues
         );
+    }
+
+    private boolean issueExistsAmongAncestors(String xIssueKey,
+                                              List<Issue> issuesParent,
+                                              List<Issue> issuesGrandParent) {
+        return jiraProperties.isChild() &&
+                (issueExistsInAncestor(xIssueKey, issuesParent, parentUrl) ||
+                        issueExistsInAncestor(xIssueKey, issuesGrandParent, grandParentUrl));
     }
 
     private List<Issue> getIssuesGrandParent(ScanRequest request) {
@@ -1051,29 +1060,20 @@ public class JiraService {
         return nonPublishedScanResultsMap;
     }
 
-    private boolean parentCheck(String key, List<Issue> issues) {
-        if (issues != null) {
-            Map<String, Issue> jiraMap = this.getJiraIssueMap(issues);
-            if (this.jiraProperties.isChild() && jiraMap.containsKey(key)) {
-                log.info("Issue ({}) found in parent ({}). Not creating issue for child issue", jiraMap.get(key).getKey(), parentUrl);
-                return true;
-            }
-            return false;
-        }
-        return false;
-    }
-    
-    private boolean grandparentCheck(String key, List<Issue> issues) {
+    private boolean issueExistsInAncestor(String issueKey, List<Issue> issues, String ancestorUrl) {
+        boolean result = false;
         if (issues != null){
-            Map<String, Issue> jiraMap;
-            jiraMap = this.getJiraIssueMap(issues);
-            if (this.jiraProperties.isChild() && (jiraMap.containsKey(key))) {
-                log.info("Issue ({}) found in grandParent ({}). Not creating issue for child issue", jiraMap.get(key).getKey(), grandParentUrl);
-                return true;
+            Map<String, Issue> jiraMap = this.getJiraIssueMap(issues);
+            if (this.jiraProperties.isChild() && jiraMap.containsKey(issueKey)) {
+                String ancestorName = ancestorUrl.equals(parentUrl) ? "parent" : "grandparent";
+
+                log.info("Issue ({}) found in {} ({}). Not creating issue for child issue",
+                        jiraMap.get(issueKey).getKey(), ancestorName, ancestorUrl);
+
+                result = true;
             }
-            return false;
         }
-        return false;
+        return result;
     }
 
     public URI getJiraURI() {
