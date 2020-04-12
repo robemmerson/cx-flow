@@ -148,12 +148,11 @@ jobs:
               --set cxflow.jiraToken=${JIRA_TOKEN} \
               --set cxflow.jiraProject=${JIRA_PROJECT} \
               --set cxflow.azureToken=${AZURE_TOKEN} \
-              --set ingress.hosts[0].host=<< parameters.release-name >>.${EXTERNAL_DNS_DOMAIN} \
-              --set ingress.hosts[0].paths[0]="/*" \
               << parameters.chart >>
       - run:
           name: Show running pods
           command: |
+            export ALB_ENDPOINT=$(kubectl get ingress -n << parameters.namespace >> -o yaml | grep hostname | awk '{print $3}')
             kubectl get pods -n << parameters.namespace >>
 
   component-tests:
@@ -183,19 +182,12 @@ jobs:
       - run:
           name: Run E2E Tests
           command: |
-            export HOOK_TARGET=https://cxflow-${CIRCLE_SHA1::7}.${EXTERNAL_DNS_DOMAIN}
-            ./gradlew clean e2eTests --info -Dtarget=${HOOK_TARGET} -Drepo=${HOOK_REPO} -Dnamespace=${HOOK_NAMESPACE}
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
-          when: always
-      - store_test_results:
-          path: ~/test-results
-      - store_artifacts:
-          path: ~/test-results/junit
-  
+            echo "ALB_ENDPOINT: ${ALB_ENDPOINT}"
+            printenv
+            #export HOOK_TARGET=https://cxflow-${CIRCLE_SHA1::7}.${EXTERNAL_DNS_DOMAIN}
+            #./gradlew clean e2eTests --info -Dtarget=${HOOK_TARGET} -Drepo=${HOOK_REPO} -Dnamespace=${HOOK_NAMESPACE}
+     # - run:
+      #    name: Save test results
   integration-tests:
     docker:
       - image: "circleci/openjdk:8-jdk"
@@ -203,9 +195,9 @@ jobs:
       - checkout 
       - run:
           name: Run Integration Tests
-          command: |
-            export HOOK_TARGET=https://cxflow-${CIRCLE_SHA1::7}.${EXTERNAL_DNS_DOMAIN}
-            ./gradlew clean integrationTest --info -Dtarget=${HOOK_TARGET} -Drepo=${HOOK_REPO} -Dnamespace=${HOOK_NAMESPACE}
+          command: printenv
+            #export HOOK_TARGET=https://cxflow-${CIRCLE_SHA1::7}.${EXTERNAL_DNS_DOMAIN}
+            #./gradlew clean integrationTest --info -Dtarget=${HOOK_TARGET} -Drepo=${HOOK_REPO} -Dnamespace=${HOOK_NAMESPACE}
       - run:
           name: Save test results
           command: |

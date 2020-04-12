@@ -10,7 +10,3 @@ dependencies:
     version: ~0.1.13
     repository: http://storage.googleapis.com/kubernetes-charts-incubator
     enabled: true
-  - name: external-dns
-    version: ~2.19.1
-    repository: https://kubernetes-charts.storage.googleapis.com/
-    enabled: true
