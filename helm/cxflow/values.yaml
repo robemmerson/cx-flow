@@ -48,7 +48,7 @@ ingress:
     alb.ingress.kubernetes.io/healthcheck-path: /actuator
     alb.ingress.kubernetes.io/inbound-cidrs: 0.0.0.0/0
   paths:
-    - /
+    - /*
 
 aws-alb-ingress-controller:
    clusterName: eks-cxflow-ci

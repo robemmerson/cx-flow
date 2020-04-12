@@ -153,6 +153,8 @@ jobs:
           name: Show running pods
           command: |
             export ALB_ENDPOINT=$(kubectl get ingress -n << parameters.namespace >> -o yaml | grep hostname | awk '{print $3}')
+            echo "ALB_ENDPOINT: ${ALB_ENDPOINT}"
+            sleep 60
             kubectl get pods -n << parameters.namespace >>
 
   component-tests:
