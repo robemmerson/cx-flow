@@ -224,7 +224,7 @@ public class GitHubToJiraSteps {
             }
             Promise<SearchResult> temp = searchClient.searchJql(jql, 10, 0, fields);
             try {
-                result = temp.get(500, TimeUnit.MILLISECONDS);
+                result = temp.get(2000, TimeUnit.MILLISECONDS);
                 TimeUnit.SECONDS.sleep(5);
             } catch (Exception e) {
                 result = null;
