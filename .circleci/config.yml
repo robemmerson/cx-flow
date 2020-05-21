@@ -320,7 +320,7 @@ jobs:
             git pull origin develop
             git status
             git log -n1
-            currentVersion=$(cat build.gradle | grep "version =" | awk '{print $3}' | sed s/"'"/""/g)
+            currentVersion=$(cat build.gradle | grep "version =" | cut -d "=" -f2 | tr -d " \t\n\r" | sed s/"'"/""/g)
             newVersion=$(echo ${currentVersion} | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
             sed -i "s/version[[:space:]]=[[:space:]]*.*/version = \'${newVersion}\'/g" build.gradle
             cat build.gradle
