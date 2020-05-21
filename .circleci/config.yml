@@ -292,6 +292,41 @@ jobs:
             VERSION=$(cat ./build/libs/version.txt)
             rm ./build/libs/version.txt
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -n ${VERSION} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./build/libs/
+  
+  release-version:
+    docker:
+      - image: alpine/git
+    steps:
+      - checkout
+      - run:
+          name: Finish Release
+          command: |
+            git remote add origin-temp https://${CIRCLE_PROJECT_USERNAME}:${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
+            git config user.email ${GITHUB_USER_EMAIL}
+            git config user.name ${GITHUB_USER}
+            git status
+            git checkout -b temp
+            git checkout master
+            git pull origin master
+            git merge temp
+            git branch -D temp
+            echo "##########################################"
+            git status
+            echo "##########################################"
+            git log -n1
+      - run:
+          name: Start Release
+          command:
+            git remote add origin-temp https://${CIRCLE_PROJECT_USERNAME}:${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
+            git checkout develop
+            git pull origin develop
+            git status
+            git log -n1
+            currentVersion=$(cat build.gradle | grep "version =" | awk '{print $3}' | sed s/"'"/""/g)
+            newVersion=$(echo ${currentVersion} | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
+            sed -i "s/version[[:space:]]=[[:space:]]*.*/version = \'${newVersion}\'/g" build.gradle
+            cat build.gradle
+            git status
 
 orbs:
   sonarcloud: sonarsource/sonarcloud@1.0.1
@@ -301,6 +336,12 @@ orbs:
 
 workflows:
   version: 2
+  release:
+    jobs:
+      - release-version:
+          filters:
+            tags:
+              only: /^release-candidate-.*/
   sonar:
     jobs:
       - sonar:
