@@ -315,7 +315,7 @@ jobs:
             git log -n1
       - run:
           name: Start Release
-          command:
+          command: |
             git checkout develop
             git pull origin develop
             git status
